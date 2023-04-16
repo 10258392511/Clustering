@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import torch
 import monai
 import nibabel as nib
+import bayes_opt
 import tqdm
 import yaml
 import Clustering.utils.pytorch_utils as ptu

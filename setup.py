@@ -11,9 +11,12 @@ setup(
         "scikit-learn",
         "nibabel",
         "monai",
+        "bayesian-optimization",
         "tqdm",
         "PyYAML",
         "notebook",
         "einops",
+        "jaxlib",
+        "jax"
     ]
 )
