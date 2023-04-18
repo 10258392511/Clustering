@@ -1,0 +1,10 @@
+features:
+  spherical_scale: 55
+  spatial_weight: 0.5
+  if_dwi: False
+clustering:
+  name: "k_means"
+  params:  # for sklearn KMeans
+    n_clusters: 7
+    init: "k-means++"
+    n_init: 10

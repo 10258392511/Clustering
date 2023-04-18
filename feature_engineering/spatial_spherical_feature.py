@@ -30,5 +30,6 @@ class SpatialSphericalFeature(BaseFeature):
         spherical_feats = self.images["spherical_coeff"][i_inds, j_inds, k_inds] * self.params["spherical_scale"] * np.sqrt(1 - self.params["spatial_weight"])
         feats = np.concatenate([spatial_feats, spherical_feats], axis=-1)  # (N_all, D_all)
 
+        # (N, D), (N, 3)
         return feats, ijk_inds
     
