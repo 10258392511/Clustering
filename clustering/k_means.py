@@ -10,7 +10,7 @@ class KMeansCluster(BaseCluster):
     def fit_transform(self) -> np.ndarray:
         self.model.fit(self.features)
         labels = self.model.labels_  # (N,)
-        img_out = -np.ones(self.in_shape)
-        img_out[self.inds[:, 0], self.inds[:, 1], self.inds[:, 2]] = labels.astype(float)
+        img_out = np.zeros(self.in_shape, dtype=int)  # bg: 0
+        img_out[self.inds[:, 0], self.inds[:, 1], self.inds[:, 2]] = labels.astype(int) + 1
 
         return img_out    

@@ -16,6 +16,7 @@ setup(
         "tqdm",
         "PyYAML",
         "notebook",
+        "ipywidgets",
         "einops",
         "jaxlib",
         "jax"
