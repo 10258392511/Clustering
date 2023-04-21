@@ -5,7 +5,7 @@ features:
 clustering:
   name: "k_means"
   params:  # for sklearn KMeans
-    n_clusters: 7
+    n_clusters: 14
     init: "k-means++"
     n_init: 10
     random_state: 0

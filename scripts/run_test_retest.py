@@ -94,9 +94,12 @@ if __name__ == "__main__":
     config_dict = load_config(args_dict["task_name"])
     eval_params = {
         "hausdorff_dist_pct": 95,
-        "num_clusters": 7,
+        "num_clusters": 14,
         "centroid_dist_order": 2
     }
+    if not os.path.isdir(args_dict["output_dir"]):
+        os.makedirs(args_dict["output_dir"])
+
     with open(os.path.join(args_dict["output_dir"], "desc.txt"), "w") as wf:
         for key, val in args_dict.items():
             wf.write(f"{key}: {val}\n")
