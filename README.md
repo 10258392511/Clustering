@@ -12,8 +12,10 @@ If you have successfully installed all dependencies, you should be able to run a
 python3 scripts/test_install.py
 ```
 1. Test-Retest Naming Convention
-- pp01_dwi_run01_A.nii.gz
-- pp01_dwi_run01_B.nii.gz
-- runA_wm_fod.nii.gz
-- runB_wm_fod.nii.gz
-- thalamus_warped.nii.gz (assuming thalamus voxel intensity > 1)
+- subject0 
+    - pp01_dwi_run01_A.nii.gz
+    - pp01_dwi_run01_B.nii.gz
+    - runA_wm_fod.nii.gz
+    - runB_wm_fod.nii.gz
+    - thalamus_warped.nii.gz (assuming thalamus voxel intensity > 1)
+- subject1...

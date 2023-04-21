@@ -57,10 +57,12 @@ class TestRetestBaseEvaluator(abc.ABC):
 
         return test_label_aligned
 
-    def __call__(self):
+    def __call__(self) -> pd.DataFrame:
         self.compute_dsc()
         self.compute_hausdorff_dist()
         self.compute_centroid_dist()
+
+        return self.metric_df
     
     def compute_dsc(self):
         metric_vals = self.dice_metric(self.test_labels, self.retest_labels).mean(dim=-1)  # (B, num_clusters) -> (B,)
