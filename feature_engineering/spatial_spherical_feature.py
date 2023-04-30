@@ -11,7 +11,7 @@ class SpatialSphericalFeature(BaseFeature):
     """
     def __init__(self, path_dict: Dict[str, str], params: dict):
         """
-        path_dict: keys: thalamus_mask (H, W, D), spherical_coeff (H, W, D, N)
+        path_dict: keys: thalamus_mask (H, W, D), spherical_coeff (H, W, D, N), (dwi (H, W, D))
         params: spherical_scale, spatial_weight, if_dwi
         """
         super().__init__()

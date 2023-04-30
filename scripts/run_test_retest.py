@@ -21,6 +21,25 @@ from Clustering.configs import load_config, load_model
 from Clustering.feature_engineering import SpatialSphericalFeature
 from Clustering.utils.utils import binarize_mask, save_image
 from Clustering.evaluation import TestRetestPairwiseEvaluator
+from typing import List
+
+
+def read_in_one_subject(dir_name: str) -> List[dict]:
+    """
+    Returns path_dict_test & path_dict_retest
+    """
+    out_dicts = []
+    all_dirs = glob.glob(os.path.join(dir_name, "*_A/")) + glob.glob(os.path.join(dir_name, "*_B/"))
+    for dir_iter in all_dirs:
+        dict_iter = {
+            "thalamus_mask": glob.glob(os.path.join(dir_iter, "thalamus*.nii.gz"))[0],
+            "spherical_coeff": glob.glob(os.path.join(dir_iter, "wm*.nii.gz"))[0]
+        }
+        out_dicts.append(dict_iter)
+    
+    # print(out_dicts)
+
+    return out_dicts
 
 
 def process_one_subject(dir_name: str, config_dict: dict, args_dict: dict):
@@ -29,20 +48,15 @@ def process_one_subject(dir_name: str, config_dict: dict, args_dict: dict):
     """
     # extract features
     feature_params = config_dict["features"]
-    path_dict_test = {
-        "thalamus_mask": os.path.join(dir_name, "thalamus_warped.nii.gz"),
-        "spherical_coeff": os.path.join(dir_name, "runA_wm_fod.nii.gz")
-    }
+    path_dict_test, path_dict_retest = read_in_one_subject(dir_name)
+    # print(path_dict_test)
+    # print(path_dict_retest)
     featurizer_test = SpatialSphericalFeature(path_dict_test, feature_params)
-    featurizer_test.images["thalamus_mask"] = binarize_mask(featurizer_test.images["thalamus_mask"], 1)  # TODO: comment out
+    featurizer_test.images["thalamus_mask"] = binarize_mask(featurizer_test.images["thalamus_mask"], 0)  # TODO: comment out
     feats_test, inds_test = featurizer_test()
 
-    path_dict_retest = {
-        "thalamus_mask": os.path.join(dir_name, "thalamus_warped.nii.gz"),
-        "spherical_coeff": os.path.join(dir_name, "runB_wm_fod.nii.gz")
-    }
     featurizer_retest = SpatialSphericalFeature(path_dict_retest, feature_params)
-    featurizer_retest.images["thalamus_mask"] = binarize_mask(featurizer_retest.images["thalamus_mask"], 1)  # TODO: comment out
+    featurizer_retest.images["thalamus_mask"] = binarize_mask(featurizer_retest.images["thalamus_mask"], 0)  # TODO: comment out
     feats_retest, inds_retest = featurizer_test()
 
     # clustering
@@ -52,12 +66,12 @@ def process_one_subject(dir_name: str, config_dict: dict, args_dict: dict):
     in_shape = featurizer_test.images["thalamus_mask"].shape
     model_test = ctor(in_shape, feats_test, inds_test, model_params)
     test_labels = model_test.fit_transform()  # (H, W, D)
-    test_centroids = model_test.model.cluster_centers_
+    test_centroids = model_test.get_centroids()
 
     in_shape = featurizer_retest.images["thalamus_mask"].shape
     model_retest = ctor(in_shape, feats_retest, inds_retest, model_params)
     retest_labels = model_retest.fit_transform()  # (H, W, D)
-    retest_centroids = model_retest.model.cluster_centers_
+    retest_centroids = model_retest.get_centroids()
 
     # save results
     if not args_dict["if_tuning"]:
@@ -124,7 +138,7 @@ if __name__ == "__main__":
         all_dirs = glob.glob(os.path.join(args_dict["input_dir"], "*"))
         for i, dir_name in enumerate(all_dirs):
             if args_dict["if_print_in_objective_func"]:
-                print(f"Current: subject {i + 1}/{len(all_dirs)}")
+                print(f"Current: subject {i + 1}/{len(all_dirs)}, {dir_name}")
             test_labels, retest_labels, test_centroids, retest_centroids = process_one_subject(dir_name, config_dict, args_dict)
             test_labels_all.append(test_labels)
             retest_labels_all.append(retest_labels)
@@ -159,3 +173,4 @@ if __name__ == "__main__":
         wf.write(f"best_spherical_scale: {10 ** best_spherical_scale_log}, best_spatial_weight: {best_spatial_weight}\n")
     args_dict["if_print_in_objective_func"] = True
     objective_func(best_spherical_scale_log, best_spatial_weight)
+    

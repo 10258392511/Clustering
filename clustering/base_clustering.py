@@ -17,3 +17,7 @@ class BaseCluster(abc.ABC):
         Returns the volume of clustering labels, of shape .in_shape 
         """
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_centroids(self):
+        raise NotImplementedError

@@ -14,3 +14,7 @@ class KMeansCluster(BaseCluster):
         img_out[self.inds[:, 0], self.inds[:, 1], self.inds[:, 2]] = labels.astype(int) + 1
 
         return img_out    
+    
+    def get_centroids(self):
+        
+        return self.model.cluster_centers_

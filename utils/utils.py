@@ -1,5 +1,6 @@
 import numpy as np
 import nibabel as nib
+import os
 
 from jax.tree_util import tree_map
 from typing import Dict
@@ -18,5 +19,9 @@ def binarize_mask(mask: np.ndarray, th: float):
 
 def save_image(img: np.ndarray, filename: str, affine: np.ndarray = np.eye(4)):
     assert ".nii.gz" in filename
+    output_dir = os.path.dirname(filename)
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
     img_nib = nib.Nifti1Image(img, affine)
     nib.save(img_nib, filename)
+    

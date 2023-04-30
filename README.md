@@ -12,10 +12,15 @@ If you have successfully installed all dependencies, you should be able to run a
 python3 scripts/test_install.py
 ```
 1. Test-Retest Naming Convention
-- subject0 
-    - pp01_dwi_run01_A.nii.gz
-    - pp01_dwi_run01_B.nii.gz
-    - runA_wm_fod.nii.gz
-    - runB_wm_fod.nii.gz
-    - thalamus_warped.nii.gz (assuming thalamus voxel intensity > 1)
-- subject1...
+- pp20/
+    - pp20_A/
+        - pp20_dwi_run01_A.nii.gz
+        - thalamus_warp_0.3_thresh.nii.gz
+        - wm_norm.nii.gz
+    - pp20_B/
+        - pp20_dwi_run01_B.nii.gz
+        - thalamus_warp_0.3_thresh.nii.gz
+        - wm_norm.nii.gz
+- pp21/...
+
+2. **The current thalamus mask is not binarized. Make sure foreground of thalamus is all voxels with intensity > 0, i.e. threshold is 0**
