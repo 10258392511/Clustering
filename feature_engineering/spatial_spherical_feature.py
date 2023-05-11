@@ -11,8 +11,8 @@ class SpatialSphericalFeature(BaseFeature):
     """
     def __init__(self, path_dict: Dict[str, str], params: dict):
         """
-        path_dict: keys: thalamus_mask (H, W, D), spherical_coeff (H, W, D, N), (dwi (H, W, D))
-        params: spherical_scale, spatial_weight, if_dwi
+        path_dict: keys: thalamus_mask (H, W, D), spherical_coeff (H, W, D, N)
+        params: spherical_scale, spatial_weight
         """
         super().__init__()
         assert 0 <= params["spatial_weight"] <= 1

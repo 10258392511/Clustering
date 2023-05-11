@@ -14,7 +14,7 @@ class TestRetestBaseEvaluator(abc.ABC):
     def __init__(self, test_labels: Sequence[np.ndarray], test_centroids: Sequence[np.ndarray], 
                  retest_labels: Sequence[np.ndarray], retest_centroids: Sequence[np.ndarray], params: dict):
         """
-        test_labels, retest_labels: List[(D, H, W)]
+        test_labels, retest_labels: List[(H, W, D)]
         test_centroids, retest_centroids: List[(num_clusters, D_feature)]
         params: hausdorff_dist_pct = 95, num_clusters = 7, centroid_dist_order = 2, standard_space_atlases: List[str]
         .metric_df: colnames: dsc, hausdorff_dist, centroid_dist
@@ -32,10 +32,10 @@ class TestRetestBaseEvaluator(abc.ABC):
         self.retest_labels = []
         for test_label, retest_label, mapping in zip(test_labels, retest_labels, self.test_label2retest_label):
             test_label = self.align_labels(test_label, mapping)
-            self.test_labels.append(self.post_processor(test_label[None, ...]))  # (D, H, W) -> (num_clusters + 1, D, H, W)
+            self.test_labels.append(self.post_processor(test_label[None, ...]))  # (H, W, D) -> (num_clusters + 1, H, W, D)
             self.retest_labels.append(self.post_processor(retest_label[None, ...]))
-        self.test_labels = torch.tensor(np.stack(self.test_labels, axis=0))  # (N, num_clusters + 1, D, H, W)
-        self.retest_labels = torch.tensor(np.stack(self.retest_labels, axis=0))  # (N, num_clusters + 1, D, H, W)
+        self.test_labels = torch.tensor(np.stack(self.test_labels, axis=0))  # (N, num_clusters + 1, H, W, D)
+        self.retest_labels = torch.tensor(np.stack(self.retest_labels, axis=0))  # (N, num_clusters + 1, H, W, D)
         self.metric_df = pd.DataFrame()
         self.dice_metric = DiceMetric(include_background=False, reduction="none")
         self.hausdorff_dist_metric = HausdorffDistanceMetric(include_background=False, percentile=self.params["hausdorff_dist_pct"], reduction="none")
@@ -51,7 +51,7 @@ class TestRetestBaseEvaluator(abc.ABC):
 
     def align_labels(self, test_label: np.ndarray, mapping: np.ndarray) -> np.ndarray:
         """
-        test_label: (D, H, W)
+        test_label: (H, W, D)
         """
         test_label_aligned = mapping[test_label.flatten()].reshape(test_label.shape)
 
