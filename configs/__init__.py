@@ -11,7 +11,8 @@ for _ in range(2):
 
 # mapping task/dataset_name
 CONFIG_PATH = {
-    "test_retest_kmeans": os.path.join(ROOT, "configs", "test_retest_kmeans.yml")
+    "test_retest_kmeans": os.path.join(ROOT, "configs", "test_retest_kmeans.yml"),
+    "test_retest_GM": os.path.join(ROOT, "configs", "test_retest_GM.yml")
 }
 
 CLUSTERING_MAPPING = {

@@ -12,11 +12,17 @@ from pprint import pprint
 
 
 def print_data_dict_shape(data_dict: Dict[str, np.ndarray], return_type=False):
-    func = None
-    if return_type:
-        func = lambda x : (x.shape, type(x))
-    else:
-        func = lambda x : x.shape
+    def func(x):
+        x_out = None
+        try:
+            x_out = x.shape
+        except AttributeError:
+            x_out = x
+        if return_type:
+            x_out = (x_out, type(x))
+        
+        return x_out
+    
     shape_dict = tree_map(func, data_dict)
     pprint(shape_dict)
 

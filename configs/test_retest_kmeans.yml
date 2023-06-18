@@ -1,3 +1,4 @@
 features:
+  spatial_type: "dist"  # "coord" or "dist"
   spherical_scale: 55
   spatial_weight: 0.5

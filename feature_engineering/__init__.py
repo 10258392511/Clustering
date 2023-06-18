@@ -1,1 +1,2 @@
 from .spatial_spherical_feature import SpatialSphericalFeature
+from .dist_spherical_feature import DistSphericalFeature

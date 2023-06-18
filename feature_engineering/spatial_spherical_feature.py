@@ -1,10 +1,10 @@
 import numpy as np
 
-from .base_feature import BaseFeature
-from monai.transforms import LoadImaged
-from typing import Dict, Tuple
+from .base_feature import *
+# from monai.transforms import LoadImaged
+# from typing import Dict, Tuple
 
-
+# TODO: delete this
 # class SpatialSphericalFeature(BaseFeature):
 #     """
 #     (y, x, z) || spherical harmonious coefficients
@@ -36,13 +36,15 @@ from typing import Dict, Tuple
 
 class SpatialSphericalFeature(BaseFeature):
     """
-    (y, x, z) || spherical harmonious coefficients
+    spherical harmonious coeffs || (y, x, z)
     """
-    def __init__(self, data_dict: dict, config: dict):
-        """
-        data_dict: see utils.utils.read_data(.)
-        config: see test_retest_kmeans.yml
-        """
-        self.data_dict = data_dict
-        self.config = config
-    
+    def __init__(self, config: dict):
+        super().__init__(config)
+
+    def make_spatial_features(self, data_dict: dict, key: str):
+        sh_features = data_dict["spherical_coeffs"]  # (H, W, D, num_features)
+        H, W, D, _ = sh_features.shape
+        ijk_grid = np.meshgrid(np.arange(H), np.arange(W), np.arange(D))
+        ijk_grid = np.stack(ijk_grid, axis=-1)  # (H, W, D, 3)
+
+        return ijk_grid
