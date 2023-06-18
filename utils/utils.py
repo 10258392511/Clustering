@@ -42,7 +42,7 @@ def save_image(img: np.ndarray, filename: str, affine: np.ndarray = np.eye(4)):
     nib.save(img_nib, filename)
 
 
-def read_data(dirname: str) -> dict:
+def read_data(dirname: str, if_read_tfm=True) -> dict:
     """
     dirname: */pp*
 
@@ -67,16 +67,17 @@ def read_data(dirname: str) -> dict:
     for run_iter in all_runs:
         run_dict_iter = {}
         run_dict_iter["spherical_coeffs"] = nib.load(os.path.join(run_iter, "spherical_coeffs.nii.gz"))
-        try:
-            run_dict_iter["B2A"] = {
-                "left": sio.loadmat(os.path.join(dirname, "run_A", f"B_to_A_left.mat")),
-                "right": sio.loadmat(os.path.join(dirname, "run_A", f"B_to_A_right.mat"))
-            }
-        except ValueError:
-            run_dict_iter["B2A"] = {
-                "left": np.loadtxt(os.path.join(dirname, "run_A", f"B_to_A_left.mat")),
-                "right": np.loadtxt(os.path.join(dirname, "run_A", f"B_to_A_right.mat"))
-            }
+        if if_read_tfm:
+            try:
+                run_dict_iter["B2A"] = {
+                    "left": sio.loadmat(os.path.join(dirname, "run_A", f"B_to_A_left.mat")),
+                    "right": sio.loadmat(os.path.join(dirname, "run_A", f"B_to_A_right.mat"))
+                }
+            except ValueError:
+                run_dict_iter["B2A"] = {
+                    "left": np.loadtxt(os.path.join(dirname, "run_A", f"B_to_A_left.mat")),
+                    "right": np.loadtxt(os.path.join(dirname, "run_A", f"B_to_A_right.mat"))
+                }
         for key_iter in ["left", "right"]:
             individual_thalamus_dict = {}
             thalamus_subdir_name = glob.glob(os.path.join(run_iter, "thalamus*"))[0]
