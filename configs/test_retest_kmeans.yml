@@ -1,11 +1,3 @@
 features:
   spherical_scale: 55
   spatial_weight: 0.5
-  if_dwi: False
-clustering:
-  name: "k_means"
-  params:  # for sklearn KMeans
-    n_clusters: 14
-    init: "random"
-    n_init: 10
-    random_state: 0
