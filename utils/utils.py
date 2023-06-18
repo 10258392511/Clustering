@@ -7,7 +7,7 @@ import re
 
 from monai.transforms import Affine
 from jax.tree_util import tree_map
-from typing import Dict
+from typing import Dict, Union
 from pprint import pprint
 
 
@@ -38,7 +38,7 @@ def save_image(img: np.ndarray, filename: str, affine: np.ndarray = np.eye(4)):
     output_dir = os.path.dirname(filename)
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
-    img_nib = nib.Nifti1Image(img, affine)
+    img_nib = nib.Nifti1Image(img.astype(float), affine)
     nib.save(img_nib, filename)
 
 
@@ -109,3 +109,29 @@ def apply_affine(img: nib.Nifti1Image, tfm_mat: np.ndarray):
     img_tfm = nib.Nifti1Image(data_tfm[0, ...], affine)
 
     return img_tfm
+
+
+def save_prob_maps(save_dir: str, left_prob_maps: Union[np.ndarray, None] = None, right_prob_maps: Union[np.ndarray, None] = None):
+    """
+    left/right_prob_maps: (H, W, D, num_clusters + 1); discarding bg -> (H, W, D, num_clusters)
+    """
+    assert left_prob_maps is not None or right_prob_maps is not None
+    if not os.path.isdir(save_dir):
+        os.makedirs(save_dir)
+    def save_thalamus(prob_maps: np.ndarray, key: str, parent_dir: str):
+        """ 
+        key: "left", "right" or "whole"
+        """
+        save_dir = os.path.join(parent_dir, key)
+        if not os.path.isdir(save_dir):
+            os.makedirs(save_dir)
+        save_image(prob_maps, os.path.join(save_dir, "all_clusters.nii.gz"))
+        for channel_iter in range(1, prob_maps.shape[-1]):
+            save_image(prob_maps[..., channel_iter], os.path.join(save_dir, f"cluster_{channel_iter}.nii.gz"))
+    
+    if left_prob_maps is not None:
+        save_thalamus(left_prob_maps, "left", save_dir)
+    if right_prob_maps is not None:
+        save_thalamus(right_prob_maps, "right", save_dir)
+    if left_prob_maps is not None and right_prob_maps is not None:
+        save_thalamus(left_prob_maps + right_prob_maps, "whole", save_dir)

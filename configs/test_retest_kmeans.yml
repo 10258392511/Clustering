@@ -6,7 +6,7 @@ clustering:
   name: "KMeans"
   params:
     n_clusters: 7
-    init: "kmeans++"
+    init: "k-means++"
     n_init: 10
 alignment:
   hausdorff_percent: 95.

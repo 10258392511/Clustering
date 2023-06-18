@@ -19,7 +19,7 @@ CONFIG_PATH = {
 
 CLUSTERING_MODEL_MAPPING = {
     "KMeans": KMeans,
-    "GM": GaussianMixture
+    "GaussianMixture": GaussianMixture
 }
 
 # CLUSTERING_MAPPING = {

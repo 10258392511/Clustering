@@ -1,0 +1,13 @@
+features:
+  spatial_type: "dist"  # "coord" or "dist"
+  spherical_scale: 55
+  spatial_weight: 0.5
+clustering:
+  name: "GaussianMixture"
+  params:
+    n_components: 7
+    init_params: "kmeans"
+    n_init: 100
+    covariance_type: "diag"
+alignment:
+  hausdorff_percent: 95.
