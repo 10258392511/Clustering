@@ -5,6 +5,7 @@ import glob
 import scipy.io as sio
 import re
 
+from monai.transforms import Affine
 from jax.tree_util import tree_map
 from typing import Dict
 from pprint import pprint
@@ -44,9 +45,11 @@ def read_data(dirname: str) -> dict:
         'run_A': {'B2A': {'left': (4, 4), 'right': (4, 4)},
            'left': {'dist_maps': {'1': (112, 112, 60)...},
                     'nucleigroups': (112, 112, 60),
+                    'thalamus_mask': (112, 112, 60),
                     'thalamus_atlas_mask': (112, 112, 60)},
            'right': {'dist_maps': {'1': (112, 112, 60)...},
                      'nucleigroups': (112, 112, 60),
+                     'thalamus_mask': (112, 112, 60),
                      'thalamus_atlas_mask': (112, 112, 60)},
            'spherical_coeffs': (112, 112, 60, 45)},
         'run_B': ...
@@ -71,6 +74,7 @@ def read_data(dirname: str) -> dict:
         for key_iter in ["left", "right"]:
             individual_thalamus_dict = {}
             thalamus_subdir_name = glob.glob(os.path.join(run_iter, "thalamus*"))[0]
+            individual_thalamus_dict["thalamus_mask"] = nib.load(os.path.join(run_iter, f"thalamus_mask_{key_iter}.nii.gz"))
             individual_thalamus_dict["thalamus_atlas_mask"] = nib.load(os.path.join(thalamus_subdir_name, f"{key_iter}_thalamus_atlasmask.nii.gz"))
             individual_thalamus_dict["nucleigroups"] = nib.load(os.path.join(thalamus_subdir_name, f"{key_iter}_thalamus_nucleigroups_nonlinear.nii.gz"))
             individual_thalamus_dict["dist_maps"] = {}
@@ -87,3 +91,14 @@ def read_data(dirname: str) -> dict:
         out_dict[os.path.basename(run_iter)] = run_dict_iter
 
     return out_dict
+
+
+def apply_affine(img: nib.Nifti1Image, tfm_mat: np.ndarray):
+    data = img.get_fdata()
+    affine = img.affine
+    new_affine = tfm_mat
+    affine_tfm = Affine(mode="nearest", affine=new_affine)
+    data_tfm, _ = affine_tfm(data[None, ...])
+    img_tfm = nib.Nifti1Image(data_tfm[0, ...], affine)
+
+    return img_tfm

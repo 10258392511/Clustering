@@ -11,6 +11,7 @@ setup(
         "matplotlib",
         "scikit-learn",
         "nibabel",
+        "SimpleITK",
         "monai",
         "bayesian-optimization",
         "tqdm",
