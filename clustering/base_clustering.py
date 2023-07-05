@@ -182,6 +182,7 @@ class BaseCluster(abc.ABC):
         out_dict = {}
         for key in ["left", "right"]:
             out_dict_iter = self.__process_thalamus(data_dict, feature_dict, key)
+            out_dict_iter["atlas"] = out_dict_iter["atlas"] * data_dict[key]["thalamus_atlas_mask"].get_fdata()
             out_dict_iter["prob_maps"] = self.create_probabilistic_maps(feature_dict, key, out_dict_iter["hausdorff_dist_df"])
             out_dict[key] = out_dict_iter
         

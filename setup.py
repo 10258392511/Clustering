@@ -20,6 +20,7 @@ setup(
         "ipywidgets",
         "einops",
         "jaxlib",
-        "jax"
+        "jax",
+        "fslpy"
     ]
 )

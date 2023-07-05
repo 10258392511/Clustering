@@ -5,6 +5,7 @@ import glob
 import scipy.io as sio
 import re
 
+from fsl.wrappers import applyxfm
 from monai.transforms import Affine
 from jax.tree_util import tree_map
 from typing import Dict, Union
@@ -100,13 +101,23 @@ def read_data(dirname: str, if_read_tfm=True) -> dict:
     return out_dict
 
 
-def apply_affine(img: nib.Nifti1Image, tfm_mat: np.ndarray):
-    data = img.get_fdata()
-    affine = img.affine
-    new_affine = tfm_mat
-    affine_tfm = Affine(mode="nearest", affine=new_affine)
-    data_tfm, _ = affine_tfm(data[None, ...])
-    img_tfm = nib.Nifti1Image(data_tfm[0, ...], affine)
+# def apply_affine(img: nib.Nifti1Image, tfm_mat: np.ndarray):
+#     data = img.get_fdata()
+#     affine = img.affine
+#     new_affine = tfm_mat
+#     affine_tfm = Affine(mode="nearest", affine=new_affine)
+#     data_tfm, _ = affine_tfm(data[None, ...])
+#     img_tfm = nib.Nifti1Image(data_tfm[0, ...], affine)
+
+#     return img_tfm
+
+
+def apply_affine(src: nib.Nifti1Image, ref: nib.Nifti1Image, out: str, mat: np.ndarray, interp="nearestneighbour"):
+    out_dir = os.path.dirname(out)
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+    applyxfm(src, ref, mat, out, interp)
+    img_tfm = nib.load(out)
 
     return img_tfm
 
