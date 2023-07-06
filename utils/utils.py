@@ -49,7 +49,7 @@ def read_data(dirname: str, if_read_tfm=True) -> dict:
 
     out_dict:
     {
-        'run_A': {'B2A': {'left': (4, 4), 'right': (4, 4)},
+        'run_A': [{'B2A': {'left': (4, 4), 'right': (4, 4)},]
            'left': {'dist_maps': {'1': (112, 112, 60)...},
                     'nucleigroups': (112, 112, 60),
                     'thalamus_mask': (112, 112, 60),
@@ -59,7 +59,7 @@ def read_data(dirname: str, if_read_tfm=True) -> dict:
                      'thalamus_mask': (112, 112, 60),
                      'thalamus_atlas_mask': (112, 112, 60)},
            'spherical_coeffs': (112, 112, 60, 45)},
-        'run_B': ...
+        ['run_B': ...,]
         'spherical_coeffs': (112, 112, 60, 45)}
     }
     """
@@ -112,7 +112,7 @@ def read_data(dirname: str, if_read_tfm=True) -> dict:
 #     return img_tfm
 
 
-def apply_affine(src: nib.Nifti1Image, ref: nib.Nifti1Image, out: str, mat: np.ndarray, interp="nearestneighbour"):
+def apply_affine(src: nib.Nifti1Image, ref: nib.Nifti1Image, out: str, mat: np.ndarray, interp="nearestneighbour") -> nib.Nifti1Image:
     out_dir = os.path.dirname(out)
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
@@ -122,23 +122,23 @@ def apply_affine(src: nib.Nifti1Image, ref: nib.Nifti1Image, out: str, mat: np.n
     return img_tfm
 
 
-def save_prob_maps(save_dir: str, left_prob_maps: Union[np.ndarray, None] = None, right_prob_maps: Union[np.ndarray, None] = None):
+def save_prob_maps(save_dir: str, left_prob_maps: Union[np.ndarray, None] = None, right_prob_maps: Union[np.ndarray, None] = None, affine: np.ndarray = np.eye(4)):
     """
     left/right_prob_maps: (H, W, D, num_clusters + 1); discarding bg -> (H, W, D, num_clusters)
     """
     assert left_prob_maps is not None or right_prob_maps is not None
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
-    def save_thalamus(prob_maps: np.ndarray, key: str, parent_dir: str):
+    def save_thalamus(prob_maps: np.ndarray, key: str, parent_dir: str, affine: np.ndarray = np.eye(4)):
         """ 
         key: "left", "right" or "whole"
         """
         save_dir = os.path.join(parent_dir, key)
         if not os.path.isdir(save_dir):
             os.makedirs(save_dir)
-        save_image(prob_maps, os.path.join(save_dir, "all_clusters.nii.gz"))
+        save_image(prob_maps, os.path.join(save_dir, "all_clusters.nii.gz"), affine)
         for channel_iter in range(1, prob_maps.shape[-1]):
-            save_image(prob_maps[..., channel_iter], os.path.join(save_dir, f"cluster_{channel_iter}.nii.gz"))
+            save_image(prob_maps[..., channel_iter], os.path.join(save_dir, f"cluster_{channel_iter}.nii.gz"), affine)
     
     if left_prob_maps is not None:
         save_thalamus(left_prob_maps, "left", save_dir)
