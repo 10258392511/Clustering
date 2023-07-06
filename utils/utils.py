@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import nibabel as nib
 import os
 import glob
@@ -7,6 +8,7 @@ import re
 
 from fsl.wrappers import applyxfm
 from monai.transforms import Affine
+from monai.metrics import compute_hausdorff_distance
 from jax.tree_util import tree_map
 from typing import Dict, Union
 from pprint import pprint
@@ -101,17 +103,6 @@ def read_data(dirname: str, if_read_tfm=True) -> dict:
     return out_dict
 
 
-# def apply_affine(img: nib.Nifti1Image, tfm_mat: np.ndarray):
-#     data = img.get_fdata()
-#     affine = img.affine
-#     new_affine = tfm_mat
-#     affine_tfm = Affine(mode="nearest", affine=new_affine)
-#     data_tfm, _ = affine_tfm(data[None, ...])
-#     img_tfm = nib.Nifti1Image(data_tfm[0, ...], affine)
-
-#     return img_tfm
-
-
 def apply_affine(src: nib.Nifti1Image, ref: nib.Nifti1Image, out: str, mat: np.ndarray, interp="nearestneighbour") -> nib.Nifti1Image:
     out_dir = os.path.dirname(out)
     if not os.path.isdir(out_dir):
@@ -146,3 +137,54 @@ def save_prob_maps(save_dir: str, left_prob_maps: Union[np.ndarray, None] = None
         save_thalamus(right_prob_maps, "right", save_dir)
     if left_prob_maps is not None and right_prob_maps is not None:
         save_thalamus(left_prob_maps + right_prob_maps, "whole", save_dir)
+
+
+def align_labels(atlas: np.ndarray, standard_atlas: np.ndarray, percentile: float):
+    """
+    Parameters
+    ----------
+    atlas1, atlas2: np.ndarray
+    percentile: float
+        Hausdorff distance percentile
+
+    Returns
+    -------
+    aligned_atlas: (H, W, D)
+    hausdorff_dist_df: (num_clusters, num_clusters_standard)
+    """
+    atlas = atlas.astype(int)
+    standard_atlas = standard_atlas.astype(int)
+
+    cluster_inds = np.unique(atlas)
+    cluster_inds.sort()
+    cluster_inds = cluster_inds[1:]
+    standard_inds = np.unique(standard_atlas)
+    standard_inds.sort()
+    standard_inds = standard_inds[1:]
+
+    hausdorff_dist_mat = np.zeros((len(cluster_inds), len(standard_inds)))
+    hausdorff_dist_df = pd.DataFrame(data=hausdorff_dist_mat, index=cluster_inds, columns=standard_inds)
+    for i in range(hausdorff_dist_df.shape[0]):
+        for j in range(hausdorff_dist_df.shape[1]):
+            cluster_label = int(hausdorff_dist_df.index[i])
+            standard_label = int(hausdorff_dist_df.columns[j])
+            cluster_atlas_iter = atlas.copy()
+            mask = (cluster_atlas_iter == cluster_label)
+            cluster_atlas_iter[mask] = 1
+            cluster_atlas_iter[~mask] = 0  # (H, W, D)
+
+            standard_atlas_iter = standard_atlas.copy()
+            mask = (standard_atlas_iter == standard_label)
+            standard_atlas_iter[mask] = 1
+            standard_atlas_iter[~mask] = 0  # (H, W, D)
+            
+            dist = compute_hausdorff_distance(cluster_atlas_iter[None, None, ...], standard_atlas_iter[None, None, ...], percentile=percentile)
+            hausdorff_dist_df.iloc[i, j] = dist[0, 0].item()
+    
+    atlas2standard = hausdorff_dist_df.idxmin(axis=1)
+    atlas_out = atlas.copy()
+    for label_iter in cluster_inds:
+        label_iter = int(label_iter)
+        atlas_out[atlas == label_iter] = atlas2standard[label_iter]
+
+    return atlas_out, hausdorff_dist_df
