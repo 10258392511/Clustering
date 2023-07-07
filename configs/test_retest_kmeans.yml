@@ -7,6 +7,6 @@ clustering:
   params:
     n_clusters: 7
     init: "k-means++"
-    n_init: 10
+    n_init: 20
 alignment:
   hausdorff_percent: 95.
