@@ -5,6 +5,7 @@ import os
 import glob
 import scipy.io as sio
 import re
+import pickle
 
 from fsl.wrappers import applyxfm
 from monai.transforms import Affine
@@ -69,7 +70,7 @@ def read_data(dirname: str, if_read_tfm=True) -> dict:
     out_dict = {}
     for run_iter in all_runs:
         run_dict_iter = {}
-        run_dict_iter["spherical_coeffs"] = nib.load(os.path.join(run_iter, "spherical_coeffs.nii.gz"))
+        run_dict_iter["spherical_coeffs"] = load_nifti_data_with_validation(os.path.join(run_iter, "spherical_coeffs.nii.gz"))
         if if_read_tfm:
             try:
                 run_dict_iter["B2A"] = {
@@ -84,9 +85,9 @@ def read_data(dirname: str, if_read_tfm=True) -> dict:
         for key_iter in ["left", "right"]:
             individual_thalamus_dict = {}
             thalamus_subdir_name = glob.glob(os.path.join(run_iter, "thalamus*"))[0]
-            individual_thalamus_dict["thalamus_mask"] = nib.load(os.path.join(run_iter, f"thalamus_mask_{key_iter}.nii.gz"))
-            individual_thalamus_dict["thalamus_atlas_mask"] = nib.load(os.path.join(thalamus_subdir_name, f"{key_iter}_thalamus_atlasmask.nii.gz"))
-            individual_thalamus_dict["nucleigroups"] = nib.load(os.path.join(thalamus_subdir_name, f"{key_iter}_thalamus_nucleigroups_nonlinear.nii.gz"))
+            individual_thalamus_dict["thalamus_mask"] = load_nifti_data_with_validation(os.path.join(run_iter, f"thalamus_mask_{key_iter}.nii.gz"))
+            individual_thalamus_dict["thalamus_atlas_mask"] = load_nifti_data_with_validation(os.path.join(thalamus_subdir_name, f"{key_iter}_thalamus_atlasmask.nii.gz"))
+            individual_thalamus_dict["nucleigroups"] = load_nifti_data_with_validation(os.path.join(thalamus_subdir_name, f"{key_iter}_thalamus_nucleigroups_nonlinear.nii.gz"))
             individual_thalamus_dict["dist_maps"] = {}
             all_paths = glob.glob(os.path.join(run_iter, "thalamus*/*.nii.gz"))
             pattern = key_iter + r"_.*(\d+).*distance_feature.*nii.gz"
@@ -94,7 +95,7 @@ def read_data(dirname: str, if_read_tfm=True) -> dict:
                 idx = re.search(pattern, filename_iter)
                 if idx is None:
                     continue
-                individual_thalamus_dict["dist_maps"][idx.group(1)] = nib.load(filename_iter)
+                individual_thalamus_dict["dist_maps"][idx.group(1)] = load_nifti_data_with_validation(filename_iter)
 
             run_dict_iter[key_iter] = individual_thalamus_dict
     
@@ -103,12 +104,33 @@ def read_data(dirname: str, if_read_tfm=True) -> dict:
     return out_dict
 
 
+def load_nifti_data_with_validation(filename: str, if_raise_error=False):
+    img = nib.load(filename)
+    mask = np.isnan(img.get_fdata())
+    if np.any(mask):
+        msg = f"Containing NaN: {filename}"
+        if if_raise_error:
+            raise ValueError(msg)
+        else:
+            print(msg)
+            # print((~mask).sum())
+            data = img.get_fdata()
+            # data[mask] = 0.
+            # print(data.max(), data.min())
+            data = np.zeros_like(data)
+            img = nib.Nifti1Image(data, img.affine)
+    
+    mask = np.isnan(img.get_fdata())
+    assert not np.any(mask)
+
+    return img
+        
 def apply_affine(src: nib.Nifti1Image, ref: nib.Nifti1Image, out: str, mat: np.ndarray, interp="nearestneighbour") -> nib.Nifti1Image:
     out_dir = os.path.dirname(out)
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
     applyxfm(src, ref, mat, out, interp)
-    img_tfm = nib.load(out)
+    img_tfm = load_nifti_data_with_validation(out)
 
     return img_tfm
 
@@ -188,3 +210,15 @@ def align_labels(atlas: np.ndarray, standard_atlas: np.ndarray, percentile: floa
         atlas_out[atlas == label_iter] = atlas2standard[label_iter]
 
     return atlas_out, hausdorff_dist_df
+
+
+def save_dict_pkl_and_txt(dict_to_save: dict, output_dir: str, filename: str):
+    """
+    filename: no suffix
+    """
+    with open(os.path.join(output_dir, f"{filename}.pkl"), "wb") as wf:
+        pickle.dump(dict_to_save, wf)
+    with open(os.path.join(output_dir, f"{filename}.txt"), "w") as wf:
+        for key, val in dict_to_save.items():
+            wf.write(f"{key}: {val}\n")
+

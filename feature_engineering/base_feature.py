@@ -32,6 +32,7 @@ class BaseFeature(abc.ABC):
         i_inds, j_inds, k_inds = np.nonzero(thalamus_mask)
         ijk_inds = np.stack([i_inds, j_inds, k_inds], axis=-1)  # (N_all, 3)
         sh_features = sh_features * self.config["features"]["spherical_scale"] * np.sqrt(1 - self.config["features"]["spatial_weight"])
+        # assert not np.any(np.isnan(spatial_features))
         spatial_features = spatial_features * np.sqrt(self.config["features"]["spatial_weight"])
         all_features = np.concatenate([sh_features[i_inds, j_inds, k_inds], spatial_features[i_inds, j_inds, k_inds]], axis=-1)  # (N_all, num_features)
         out_dict = {

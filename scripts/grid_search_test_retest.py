@@ -7,6 +7,9 @@ for _ in range(3):
 if PATH not in sys.path:
     sys.path.append(PATH)
 
+os.environ["FSLDIR"] = "/cluster/apps/fsl/5.0.7/x86_64"
+os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
+
 import argparse
 import numpy as np
 import pandas as pd
@@ -20,6 +23,7 @@ from Clustering.utils.utils import (
     read_data, 
     print_data_dict_shape, 
     save_image,
+    save_dict_pkl_and_txt
 )
 from Clustering.clustering import KMeansCluster
 from Clustering.evaluation.test_retest import (
@@ -35,7 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--spatial_type", choices=["coord", "dist"])
     parser.add_argument("--num_SH_scaler_steps", type=int, default=10)
     parser.add_argument("--num_spatial_weight_steps", type=int, default=10)
-    parser.add_argument("--max_log_SH", type=int, default=4)
+    parser.add_argument("--max_log_SH", type=float, default=4.)
     parser.add_argument("--temp_dir", default="../temp")
     parser.add_argument("--output_dir", default="../outputs_clustering")
     args_dict = vars(parser.parse_args())
@@ -43,12 +47,16 @@ if __name__ == "__main__":
     # setup
     task_name = "test_retest_kmeans"
     config_dict = load_config(task_name)
+    config_dict["features"]["spatial_type"] = args_dict["spatial_type"]
 
     if not os.path.isdir(args_dict["temp_dir"]):
         os.makedirs(args_dict["temp_dir"])
     if not os.path.isdir(args_dict["output_dir"]):
         os.makedirs(args_dict["output_dir"])
 
+    save_dict_pkl_and_txt(args_dict, args_dict["output_dir"], "args_dict")
+    save_dict_pkl_and_txt(config_dict, args_dict["output_dir"], "config_dict")
+    
     featurizer_ctor = None
     if args_dict["spatial_type"] == "coord":
         featurizer_ctor = SpatialSphericalFeature
@@ -100,14 +108,19 @@ if __name__ == "__main__":
                 dsc_run_B = compute_dsc_cluster_and_histology(data_dict_B, cluster_dict_B)
 
                 # Save results
-                for key, dsc_dict_iter in zip(df_dict_keys, [dsc_two_runs, dsc_run_A, dsc_run_B]):
-                    df_dict[key].loc[spatial_weight, SH_coeff] = dsc_dict_iter["whole"]
-                    with open(os.path.join(subject_dir_abs, f"{key}.pkl"), "wb") as wf:
-                        pickle.dump(dsc_dict_iter, wf)
-                
-                save_dir = os.path.join(subject_dir_abs, f"SH_{SH_coeff}_spatial_w_{spatial_weight}".replace(".", "_"))
+                save_dir = os.path.join(subject_dir_abs, f"SH_{10 ** SH_coeff: .2e}_spatial_w_{spatial_weight: .2f}".replace(".", "_"))
                 if not os.path.isdir(save_dir):
                     os.makedirs(save_dir)
+
+                for key, dsc_dict_iter in zip(df_dict_keys, [dsc_two_runs, dsc_run_A, dsc_run_B]):
+                    df_dict[key].loc[spatial_weight, SH_coeff] = dsc_dict_iter["whole"]
+                    # with open(os.path.join(save_dir, f"{key}.pkl"), "wb") as wf:
+                    #     pickle.dump(dsc_dict_iter, wf)
+                    # with open(os.path.join(save_dir, f"{key}.txt"), "w") as wf:
+                    #     for key, val in dsc_dict_iter.items():
+                    #         wf.write(f"{key}: {val}\n")
+                    save_dict_pkl_and_txt(dsc_dict_iter, save_dir, key)
+                
                 for key in ["run_A", "run_B"]:
                     if key == "run_A":
                         cluster_dict_iter = cluster_dict_A
@@ -118,11 +131,11 @@ if __name__ == "__main__":
                     save_image(cluster_dict_iter["left"]["atlas_not_remapped"] + cluster_dict_iter["left"]["atlas_not_remapped"], os.path.join(save_dir, f"{key}_atlas_not_remapped.nii.gz"), system_affine_mat)
                     save_image(cluster_dict_iter["left"]["atlas"] + cluster_dict_iter["left"]["atlas"], os.path.join(save_dir, f"{key}_atlas_remapped_to_histology.nii.gz"), system_affine_mat)
                 
-                save_image(data_dict_all["B2A"]["left_B2A"] + data_dict_all["B2A"]["right_B2A"], os.path.join(save_dir, "B2A_direct.nii.gz"), data_dict_all["run_A"]["left"]["thalamus_mask"].affine)
+                save_image(data_dict_all["run_A"]["B2A"]["left_B2A"] + data_dict_all["run_A"]["B2A"]["right_B2A"], os.path.join(save_dir, "B2A_direct.nii.gz"), data_dict_all["run_A"]["left"]["thalamus_mask"].affine)
         
         # Save df's and heatmaps
         for key, df_iter in df_dict.items():
-            df_iter.to_csv(os.path.join(subject_dir, f"{key}.csv"))
+            df_iter.to_csv(os.path.join(subject_dir_abs, f"{key}.csv"))
             
             fig, axis = plt.subplots()
             handle = axis.contourf(10 ** df_iter.columns, df_iter.index, df_iter.values, cmap="plasma")
@@ -131,4 +144,4 @@ if __name__ == "__main__":
             axis.set_ylabel("spatial weight")
             axis.set_title("DSC")
             plt.colorbar(handle, ax=axis)
-            fig.savefig(os.path.join(subject_dir, f"{key}.png"))
+            fig.savefig(os.path.join(subject_dir_abs, f"{key}.png"))
