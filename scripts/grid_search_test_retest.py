@@ -114,11 +114,6 @@ if __name__ == "__main__":
 
                 for key, dsc_dict_iter in zip(df_dict_keys, [dsc_two_runs, dsc_run_A, dsc_run_B]):
                     df_dict[key].loc[spatial_weight, SH_coeff] = dsc_dict_iter["whole"]
-                    # with open(os.path.join(save_dir, f"{key}.pkl"), "wb") as wf:
-                    #     pickle.dump(dsc_dict_iter, wf)
-                    # with open(os.path.join(save_dir, f"{key}.txt"), "w") as wf:
-                    #     for key, val in dsc_dict_iter.items():
-                    #         wf.write(f"{key}: {val}\n")
                     save_dict_pkl_and_txt(dsc_dict_iter, save_dir, key)
                 
                 for key in ["run_A", "run_B"]:
@@ -128,8 +123,8 @@ if __name__ == "__main__":
                         cluster_dict_iter = cluster_dict_B
                     system_affine_mat = data_dict_all[key]["left"]["thalamus_mask"].affine
                     
-                    save_image(cluster_dict_iter["left"]["atlas_not_remapped"] + cluster_dict_iter["left"]["atlas_not_remapped"], os.path.join(save_dir, f"{key}_atlas_not_remapped.nii.gz"), system_affine_mat)
-                    save_image(cluster_dict_iter["left"]["atlas"] + cluster_dict_iter["left"]["atlas"], os.path.join(save_dir, f"{key}_atlas_remapped_to_histology.nii.gz"), system_affine_mat)
+                    save_image(cluster_dict_iter["left"]["atlas_not_remapped"] + cluster_dict_iter["right"]["atlas_not_remapped"], os.path.join(save_dir, f"{key}_atlas_not_remapped.nii.gz"), system_affine_mat)
+                    save_image(cluster_dict_iter["left"]["atlas"] + cluster_dict_iter["right"]["atlas"], os.path.join(save_dir, f"{key}_atlas_remapped_to_histology.nii.gz"), system_affine_mat)
                 
                 save_image(data_dict_all["run_A"]["B2A"]["left_B2A"] + data_dict_all["run_A"]["B2A"]["right_B2A"], os.path.join(save_dir, "B2A_direct.nii.gz"), data_dict_all["run_A"]["left"]["thalamus_mask"].affine)
         
