@@ -69,8 +69,6 @@ if __name__ == "__main__":
         featurizer_ctor = SpatialSphericalFeature
     elif args_dict["spatial_type"] == "dist":
         featurizer_ctor = DistSphericalFeature
-    log_SH_scaler_grid = np.linspace(0., args_dict["max_log_SH"], args_dict["num_SH_scaler_steps"])
-    spatial_weights_grid = np.linspace(0., 1., args_dict["num_spatial_weight_steps"])
     # end of setup
 
     all_subject_dirs = glob.glob(os.path.join(args_dict["data_dir"], "*"))
@@ -158,7 +156,7 @@ if __name__ == "__main__":
         pbounds=pbounds,
         random_state=args_dict["random_state"]
     )
-    logger = JSONLogger(path=os.path.join(args_dict["output_dir"], "logs.log"))
+    logger = JSONLogger(path=os.path.join(args_dict["output_dir"], "logs"))
     opt.subscribe(Events.OPTIMIZATION_STEP, logger)
 
     opt.maximize(init_points=args_dict["init_points"], n_iter=args_dict["n_iter"])
