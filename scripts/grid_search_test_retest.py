@@ -30,7 +30,25 @@ from Clustering.evaluation.test_retest import (
     compute_dsc_two_scans,
     compute_dsc_cluster_and_histology
 )
+from collections import defaultdict
+from functools import reduce
 from tqdm import tqdm
+
+
+def save_df_csv_png(df: pd.DataFrame, save_dir: str, filename: str):
+    """
+    filename: no suffix
+    """
+    df.to_csv(os.path.join(save_dir, f"{key}.csv"))
+            
+    fig, axis = plt.subplots()
+    handle = axis.contourf(10 ** df.columns, df.index, df.values, cmap="plasma")
+    axis.set_xscale("log")
+    axis.set_xlabel("SH scaler")
+    axis.set_ylabel("spatial weight")
+    axis.set_title("DSC")
+    plt.colorbar(handle, ax=axis)
+    fig.savefig(os.path.join(save_dir, f"{key}.png"))
 
 
 if __name__ == "__main__":
@@ -67,6 +85,8 @@ if __name__ == "__main__":
     # end of setup
     
     all_subject_dirs = glob.glob(os.path.join(args_dict["data_dir"], "*"))
+    all_df_dict = defaultdict(list)
+
     for data_dir in tqdm(all_subject_dirs, desc="subject dirs", leave=True):
         df_dict = {}
         df_dict_keys = ["dsc_two_runs", "dsc_run_A", "dsc_run_B"]
@@ -130,13 +150,13 @@ if __name__ == "__main__":
         
         # Save df's and heatmaps
         for key, df_iter in df_dict.items():
-            df_iter.to_csv(os.path.join(subject_dir_abs, f"{key}.csv"))
-            
-            fig, axis = plt.subplots()
-            handle = axis.contourf(10 ** df_iter.columns, df_iter.index, df_iter.values, cmap="plasma")
-            axis.set_xscale("log")
-            axis.set_xlabel("SH scaler")
-            axis.set_ylabel("spatial weight")
-            axis.set_title("DSC")
-            plt.colorbar(handle, ax=axis)
-            fig.savefig(os.path.join(subject_dir_abs, f"{key}.png"))
+            save_df_csv_png(df_iter, subject_dir_abs, key)
+            all_df_dict[key].append(df_iter.values)
+    
+    for key, df_val_list in all_df_dict.items():
+        all_df_dict[key] = pd.DataFrame(
+            np.stack(df_val_list, axis=0).mean(axis=0),
+            columns=log_SH_scaler_grid,
+            index=spatial_weights_grid
+        )
+        save_df_csv_png(all_df_dict[key], args_dict["output_dir"], key)
