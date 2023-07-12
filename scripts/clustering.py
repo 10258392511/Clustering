@@ -11,10 +11,7 @@ os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 
 import argparse
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 import glob
-import pickle
 
 from Clustering.feature_engineering import SpatialSphericalFeature, DistSphericalFeature
 from Clustering.configs import load_config
@@ -27,25 +24,23 @@ from Clustering.utils.utils import (
 )
 from Clustering.clustering import KMeansCluster, GaussianMixtureCluster
 from Clustering.evaluation.test_retest import (
-    compute_dsc_two_scans,
     compute_dsc_cluster_and_histology
 )
-from collections import defaultdict
-from functools import reduce
 from tqdm import tqdm
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--FSLDIR", required=True)
-    parser.add_argument("--clustering_type", default="kmeans", choices=["kmenas", "GM"])
-    parser.add_argument("--n_components", type=int, default=7)
+    parser.add_argument("--data_dir", required=True)
+    parser.add_argument("--clustering_type", default="kmeans", choices=["kmeans", "GM"])
+    parser.add_argument("--n_clusters", type=int, default=7)
     parser.add_argument("--init", default="k-means++", choices=["kmeans++", "random", "histology_atlas", "kmeans"])
     parser.add_argument("--n_init", type=int, default=20)
     parser.add_argument("--max_iter", type=int, default=100)
     parser.add_argument("--covariance_type", default="diag", choices=["spherical", "tied", "diag", "full"])
     parser.add_argument("--spatial_weight", type=float, default=.5)
-    parser.add_argument("--spherical_scale", type=float, default=55)
+    parser.add_argument("--spherical_scale", type=float, default=55.)
     parser.add_argument("--spatial_type", default="coord", choices=["coord", "dist"])
     parser.add_argument("--num_SH_features", type=int, default=28)
     parser.add_argument("--temp_dir", default="../temp")
@@ -65,14 +60,14 @@ if __name__ == "__main__":
     config_dict["features"].update({key_iter: args_dict[key_iter] for key_iter in keys_to_update})
     if args_dict["clustering_type"] == "kmeans":
         assert args_dict["init"] != "kmeans", f"""Only supports {["k-means++", "random", "histology_atlas"]}"""
-        keys_to_update = ["n_clusters", "init", "n_init"]
+        keys_to_update = ["n_clusters", "init", "n_init", "max_iter"]
     else:
-        assert args_dict["init"] not in  ["k-means++", "histology_atlas"], f"""Only supports {["kmeans", "random"]}"""
+        assert args_dict["init"] not in  ["k-means++"], f"""Only supports {["kmeans", "random", "histology_atlas"]}"""
         args_dict["init_params"] = args_dict["init"]
         args_dict["n_components"] = args_dict["n_clusters"]
-        keys_to_update = ["n_clusters", "init_params", "n_init", "covariance_type"]
+        keys_to_update = ["n_components", "init_params", "n_init", "covariance_type", "max_iter"]
 
-    config_dict["clustering"].update({key_iter: args_dict[key_iter] for key_iter in keys_to_update})
+    config_dict["clustering"]["params"].update({key_iter: args_dict[key_iter] for key_iter in keys_to_update})
        
     if not os.path.isdir(args_dict["temp_dir"]):
         os.makedirs(args_dict["temp_dir"])
@@ -88,9 +83,8 @@ if __name__ == "__main__":
         featurizer_ctor = SpatialSphericalFeature
     elif args_dict["spatial_type"] == "dist":
         featurizer_ctor = DistSphericalFeature
-    log_SH_scaler_grid = np.linspace(0., args_dict["max_log_SH"], args_dict["num_SH_scaler_steps"])
-    spatial_weights_grid = np.linspace(0., 1., args_dict["num_spatial_weight_steps"])
     
+    config_dict["init"] = args_dict["init"]
     clustering_ctor = None
     if args_dict["clustering_type"] == "kmeans":
         clustering_ctor = KMeansCluster
@@ -102,46 +96,47 @@ if __name__ == "__main__":
     for data_dir in tqdm(all_subject_dirs, desc="subject dirs", leave=True):
         SH_coeff = args_dict["spherical_scale"]
         spatial_weight = args_dict["spatial_weight"]
-        try:
-            # Subject directory info
-            subject_dir = os.path.dirname(data_dir).basename(data_dir)
-            subject_dir_abs = os.path.join(args_dict["output_dir"], subject_dir)
-            if not os.path.isdir(subject_dir_abs):
-                os.makedirs(subject_dir_abs)
+        # try:
+        # Subject directory info
+        subject_dir = os.path.basename(data_dir)
+        subject_dir_abs = os.path.join(args_dict["output_dir"], subject_dir)
+        if not os.path.isdir(subject_dir_abs):
+            os.makedirs(subject_dir_abs)
 
-            # Feature engineering
-            config_dict["features"]["spherical_scale"] = SH_coeff
-            config_dict["features"]["spatial_weight"] = spatial_weight
+        # Feature engineering
+        config_dict["features"]["spherical_scale"] = SH_coeff
+        config_dict["features"]["spatial_weight"] = spatial_weight
 
-            data_dict_all = read_data(data_dir)
-            for run_dir in data_dict_all:
-                data_dict = data_dict_all[run_dir]
+        data_dict_all = read_data(data_dir)
+        for run_dir in data_dict_all:
+            data_dict = data_dict_all[run_dir]
+            
+            featurizer = featurizer_ctor(config_dict)
+            feature_dict = featurizer(data_dict)
+
+            # Clustering
+            cluster_model = clustering_ctor(config_dict)
+            cluster_dict = cluster_model.fit_transform(data_dict, feature_dict)
+
+            # Compute DSC
+            num_classes = args_dict["n_clusters"]
+            percentile = config_dict["alignment"]["hausdorff_percent"]
+            dsc_run = compute_dsc_cluster_and_histology(data_dict, cluster_dict)
+
+            # Save results
+            save_dir = os.path.join(subject_dir_abs, run_dir)
+            if not os.path.isdir(save_dir):
+                os.makedirs(save_dir)
+
+            save_dict_pkl_and_txt(dsc_run, save_dir, "dsc_compared_with_histology")
+            
+            system_affine_mat = data_dict_all[run_dir]["left"]["thalamus_mask"].affine
+            save_image(cluster_dict["left"]["atlas_not_remapped"] + cluster_dict["right"]["atlas_not_remapped"], os.path.join(save_dir, "atlas_not_remapped.nii.gz"), system_affine_mat)
+            save_image(cluster_dict["left"]["atlas"] + cluster_dict["right"]["atlas"], os.path.join(save_dir, "atlas_remapped_to_histology.nii.gz"), system_affine_mat)
+            # save_image(data_dict["left"]["init_labels"] + data_dict["right"]["init_labels"], os.path.join(save_dir, "init_labels.nii.gz"), system_affine_mat)
+
+            save_prob_maps(save_dir, cluster_dict["left"]["prob_maps"], cluster_dict["right"]["prob_maps"], system_affine_mat)
                 
-                featurizer = featurizer_ctor(config_dict)
-                feature_dict = featurizer(data_dict)
-
-                # Clustering
-                cluster_model = clustering_ctor(config_dict)
-                cluster_dict = cluster_model.fit_transform(data_dict, feature_dict)
-
-                # Compute DSC
-                num_classes = config_dict["clustering"]["params"]["n_clusters"]
-                percentile = config_dict["alignment"]["hausdorff_percent"]
-                dsc_run = compute_dsc_cluster_and_histology(data_dict, cluster_dict)
-
-                # Save results
-                save_dir = os.path.join(subject_dir_abs, run_dir)
-                if not os.path.isdir(save_dir):
-                    os.makedirs(save_dir)
-
-                save_dict_pkl_and_txt(dsc_run, save_dir, "dsc_compared_with_histology")
-                
-                system_affine_mat = data_dict_all[run_dir]["left"]["thalamus_mask"].affine
-                save_image(cluster_dict["left"]["atlas_not_remapped"] + cluster_dict["right"]["atlas_not_remapped"], os.path.join(save_dir, "atlas_not_remapped.nii.gz"), system_affine_mat)
-                save_image(cluster_dict["left"]["atlas"] + cluster_dict["right"]["atlas"], os.path.join(save_dir, "atlas_remapped_to_histology.nii.gz"), system_affine_mat)
-
-                save_prob_maps(save_dir, cluster_dict["left"]["prob_maps"], cluster_dict["left"]["prob_maps"], system_affine_mat)
-                
-        except Exception as e:
-            print(f"{data_dir}", file=log_file)
-            print(e, file=log_file)
+        # except Exception as e:
+        #     print(f"{data_dir}", file=log_file)
+        #     print(e, file=log_file)

@@ -5,6 +5,7 @@ import abc
 from monai.metrics import compute_hausdorff_distance
 from Clustering.configs import load_clustering_model
 from Clustering.utils.utils import align_labels
+from warnings import warn
 from typing import Sequence
 
 
@@ -33,28 +34,47 @@ class BaseCluster(abc.ABC):
         See test_retest_kmeans.yml
         """
         self.config = config
-        self.models = {
-            "left": load_clustering_model(config),
-            "right": load_clustering_model(config)
-        }
+        if config["init"] != "histology_atlas":
+            self.models = {
+                "left": load_clustering_model(config),
+                "right": load_clustering_model(config)
+            }
+        else:
+            self.models = {
+                "left": None,
+                "right": None
+            }
     
-    def __compute_labels_from_histology_atlas(self, data_dict: dict, feature_dict):
+    def _compute_means_from_histology_atlas(self, data_dict: dict, feature_dict: dict):
         """
         data_dict, feature_dict: the same as .fit_transform(.)
 
         Returns
         -------
         {
-            left: (N_all,)
-            right: (N_all,)
+            left: (n_clusters, n_features)
+            right: (n_clusters, n_features)
         }
         """
         out_dict = {}
         for key in ["left", "right"]:
             standard_atlas = data_dict[key]["nucleigroups"].get_fdata().astype(int)  # (H, W, D)
             coords = feature_dict[key]["coords"]  # (N_all, 3)
-            labels_init = standard_atlas[coords[:, 0], coords[:, 1], coords[:, 2]]  # (N_all,)
-            out_dict[key] = labels_init
+            features = feature_dict[key]["features"]  # (N_all, n_features)
+            standard_thalamus_labels = standard_atlas[coords[:, 0], coords[:, 1], coords[:, 2]] - 1  # (N_all,)
+            if np.any(standard_thalamus_labels < 0):
+                warn("Selected histology atlas contains background")
+                standard_thalamus_labels = standard_thalamus_labels[standard_thalamus_labels >= 0]
+            if "n_clusters" in self.config["clustering"]["params"]:
+                num_clusters = self.config["clustering"]["params"]["n_clusters"]
+            else:
+                num_clusters = self.config["clustering"]["params"]["n_components"]
+            centroids = np.zeros((num_clusters, features.shape[-1]))
+            for label_iter in range(num_clusters):
+                indices = np.argwhere(standard_thalamus_labels == label_iter)  # (N',)
+                centroids[label_iter, :] = features[indices, :].mean(axis=0)
+            
+            out_dict[key] = centroids
 
         return out_dict
     

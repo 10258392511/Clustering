@@ -11,10 +11,7 @@ os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 
 import argparse
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 import glob
-import pickle
 
 from Clustering.feature_engineering import SpatialSphericalFeature, DistSphericalFeature
 from Clustering.configs import load_config
@@ -50,7 +47,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_iter", type=int, default=30)
     parser.add_argument("--random_state", type=int, default=0)
     args_dict = vars(parser.parse_args())
-    
+
     # Setup
     os.environ["FSLDIR"] = args_dict["FSLDIR"]
     task_name = "test_retest_kmeans"

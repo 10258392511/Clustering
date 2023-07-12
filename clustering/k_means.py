@@ -1,5 +1,5 @@
 from .base_clustering import *
-# from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans
 
 
 # class KMeansCluster(BaseCluster):
@@ -25,12 +25,14 @@ class KMeansCluster(BaseCluster):
         super().__init__(config)
     
     def init_means(self, data_dict: dict, feature_dict: dict):
-        if not self.config["clustering"]["params"]["init"] == "histology_atlas":
+        if self.config["init"] != "histology_atlas":
             return
-        labels_init = self.__compute_labels_from_histology_atlas(data_dict, feature_dict)
+        init_centroids_dict = self._compute_means_from_histology_atlas(data_dict, feature_dict)
         for key in ["left", "right"]:
-            self.models[key].model.labels_ = labels_init[key]
-    
+            params = self.config["clustering"]["params"]
+            params["init"] = init_centroids_dict[key]
+            self.models[key] = KMeans(**params)
+
     def create_probabilistic_maps(self, feature_dict: dict, key: str, hausdorff_dist_df: pd.DataFrame):
         model = self.models[key]
         thalamus_feature_dict = feature_dict[key]

@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob
-import pickle
 
 from Clustering.feature_engineering import SpatialSphericalFeature, DistSphericalFeature
 from Clustering.configs import load_config
@@ -30,7 +29,6 @@ from Clustering.evaluation.test_retest import (
     compute_dsc_cluster_and_histology
 )
 from collections import defaultdict
-from functools import reduce
 from tqdm import tqdm
 
 
