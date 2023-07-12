@@ -56,6 +56,10 @@ if __name__ == "__main__":
     parser.add_argument("--num_SH_scaler_steps", type=int, default=10)
     parser.add_argument("--num_spatial_weight_steps", type=int, default=10)
     parser.add_argument("--max_log_SH", type=float, default=4.)
+    parser.add_argument("--init", default="k-means++", choices=["k-means++", "random", "histology_atlas"])
+    parser.add_argument("--n_init", type=int, default=20)
+    parser.add_argument("--max_iter", type=int, default=100)
+    parser.add_argument("--num_SH_features", type=int, default=28)
     parser.add_argument("--temp_dir", default="../temp")
     parser.add_argument("--output_dir", default="../outputs_clustering")
     args_dict = vars(parser.parse_args())
@@ -64,7 +68,12 @@ if __name__ == "__main__":
     os.environ["FSLDIR"] = args_dict["FSLDIR"]
     task_name = "test_retest_kmeans"
     config_dict = load_config(task_name)
-    config_dict["features"]["spatial_type"] = args_dict["spatial_type"]
+    # Overwrite the default parameters in config
+    keys_to_update = ["spatial_type", "num_SH_features"]
+    config_dict["features"].update({key_iter: args_dict[key_iter] for key_iter in keys_to_update})
+    keys_to_update = ["init", "n_init", "max_iter"]
+    config_dict["clustering"]["params"].update({key_iter: args_dict[key_iter] for key_iter in keys_to_update})
+    config_dict["init"] = args_dict["init"]
 
     if not os.path.isdir(args_dict["temp_dir"]):
         os.makedirs(args_dict["temp_dir"])
@@ -150,7 +159,7 @@ if __name__ == "__main__":
                     save_image(data_dict_all["run_A"]["B2A"]["left_B2A"] + data_dict_all["run_A"]["B2A"]["right_B2A"], os.path.join(save_dir, "B2A_direct.nii.gz"), data_dict_all["run_A"]["left"]["thalamus_mask"].affine)
                     print(f"DSC = {dsc_two_runs['whole']}")
                 except Exception as e:
-                    print(f"SH = {SH_coeff}, spatial_w = {spatial_weight}", file=log_file)
+                    print(f"SH = {SH_coeff}, spatial_w = {spatial_weight}, data_dir: {data_dir}", file=log_file)
                     print(e, file=log_file)
                  
         # Save df's and heatmaps
