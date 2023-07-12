@@ -2,12 +2,14 @@ features:
   spatial_type: "dist"  # "coord" or "dist"
   spherical_scale: 55
   spatial_weight: 0.5
+  num_SH_features: 28
 clustering:
   name: "GaussianMixture"
   params:
     n_components: 7
-    init_params: "kmeans"
+    init_params: "kmeans"  # kmeans, random or histology_atlas
     n_init: 100
+    max_iter: 100
     covariance_type: "diag"
 alignment:
   hausdorff_percent: 95.

@@ -24,6 +24,13 @@ class KMeansCluster(BaseCluster):
     def __init__(self, config: dict):
         super().__init__(config)
     
+    def init_means(self, data_dict: dict, feature_dict: dict):
+        if not self.config["clustering"]["params"]["init"] == "histology_atlas":
+            return
+        labels_init = self.__compute_labels_from_histology_atlas(data_dict, feature_dict)
+        for key in ["left", "right"]:
+            self.models[key].model.labels_ = labels_init[key]
+    
     def create_probabilistic_maps(self, feature_dict: dict, key: str, hausdorff_dist_df: pd.DataFrame):
         model = self.models[key]
         thalamus_feature_dict = feature_dict[key]

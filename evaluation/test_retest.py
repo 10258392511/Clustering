@@ -252,6 +252,7 @@ def compute_dsc_two_scans(data_dict: dict, cluster_dict_A: dict, cluster_dict_B:
         out_filename = os.path.join(out_dir, f"{key}.nii.gz")
         atlas_iter_B2A = apply_affine(atlas_iter_B, atlas_iter_A, out_filename, affine_mat)
         atlas_B2A[key], dist_df = align_labels(atlas_iter_B2A.get_fdata(), atlas_iter_A.get_fdata(), percentile)
+        # # Keep these for reference
         # print(dist_df.idxmin(axis=1))
         # save_image(atlas_B2A[key], os.path.join(out_dir, f"B2A_{key}.nii.gz"), system_affine_A)
         data_dict["run_A"]["B2A"][f"{key}_B2A"] = atlas_B2A[key]

@@ -2,11 +2,13 @@ features:
   spatial_type: "dist"  # "coord" or "dist"
   spherical_scale: 55
   spatial_weight: 0.5
+  num_SH_features: 28
 clustering:
   name: "KMeans"
   params:
     n_clusters: 7
-    init: "k-means++"
+    init: "k-means++"  # k-means++, random or histology_atlas
     n_init: 20
+    max_iter: 100
 alignment:
   hausdorff_percent: 95.

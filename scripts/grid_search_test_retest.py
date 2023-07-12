@@ -7,7 +7,6 @@ for _ in range(3):
 if PATH not in sys.path:
     sys.path.append(PATH)
 
-os.environ["FSLDIR"] = "/cluster/apps/fsl/5.0.7/x86_64"
 os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 
 import argparse
@@ -53,6 +52,7 @@ def save_df_csv_png(df: pd.DataFrame, save_dir: str, filename: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--FSLDIR", required=True)
     parser.add_argument("--data_dir", required=True)
     parser.add_argument("--spatial_type", choices=["coord", "dist"])
     parser.add_argument("--num_SH_scaler_steps", type=int, default=10)
@@ -62,7 +62,8 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir", default="../outputs_clustering")
     args_dict = vars(parser.parse_args())
 
-    # setup
+    # Setup
+    os.environ["FSLDIR"] = args_dict["FSLDIR"]
     task_name = "test_retest_kmeans"
     config_dict = load_config(task_name)
     config_dict["features"]["spatial_type"] = args_dict["spatial_type"]
@@ -83,7 +84,7 @@ if __name__ == "__main__":
         featurizer_ctor = DistSphericalFeature
     log_SH_scaler_grid = np.linspace(0., args_dict["max_log_SH"], args_dict["num_SH_scaler_steps"])
     spatial_weights_grid = np.linspace(0., 1., args_dict["num_spatial_weight_steps"])
-    # end of setup
+    # end of Setup
     
     all_subject_dirs = glob.glob(os.path.join(args_dict["data_dir"], "*"))
     all_df_dict = defaultdict(list)

@@ -38,6 +38,32 @@ class BaseCluster(abc.ABC):
             "right": load_clustering_model(config)
         }
     
+    def __compute_labels_from_histology_atlas(self, data_dict: dict, feature_dict):
+        """
+        data_dict, feature_dict: the same as .fit_transform(.)
+
+        Returns
+        -------
+        {
+            left: (N_all,)
+            right: (N_all,)
+        }
+        """
+        out_dict = {}
+        for key in ["left", "right"]:
+            standard_atlas = data_dict[key]["nucleigroups"].get_fdata().astype(int)  # (H, W, D)
+            coords = feature_dict[key]["coords"]  # (N_all, 3)
+            labels_init = standard_atlas[coords[:, 0], coords[:, 1], coords[:, 2]]  # (N_all,)
+            out_dict[key] = labels_init
+
+        return out_dict
+    
+    def init_means(self, data_dict: dict, feature_dict: dict):
+        """
+        Initialize labels with histology atlas centroids if specified.
+        """
+        pass
+    
     def __process_thalamus(self, data_dict: dict, feature_dict: dict, key: str):
         """
         data_dict, feature_dict: the same as .fit_transform(.)
@@ -139,6 +165,7 @@ class BaseCluster(abc.ABC):
             "right": ...
         }
         """
+        self.init_means(data_dict, feature_dict)
         out_dict = {}
         for key in ["left", "right"]:
             out_dict_iter = self.__process_thalamus(data_dict, feature_dict, key)

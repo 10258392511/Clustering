@@ -10,6 +10,7 @@ class BaseFeature(abc.ABC):
         config: see test_retest_kmeans.yml
         """
         self.config = config
+        self.num_SH_features = self.config["features"]["num_SH_features"]
 
     def __process_thalamus(self, data_dict: dict, key: str, spatial_features: np.ndarray):
         """
@@ -26,6 +27,7 @@ class BaseFeature(abc.ABC):
         }
         """
         sh_features = data_dict["spherical_coeffs"].get_fdata()  # (H, W, D, num_sh_features)
+        sh_features = sh_features[..., :self.num_SH_features]
         H, W, D, _ = sh_features.shape
         # thalamus_mask = data_dict[key]["thalamus_atlas_mask"].get_fdata()  # (H, W, D)
         thalamus_mask = data_dict[key]["thalamus_mask"].get_fdata()  # (H, W, D)

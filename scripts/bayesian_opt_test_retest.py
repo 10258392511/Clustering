@@ -7,7 +7,6 @@ for _ in range(3):
 if PATH not in sys.path:
     sys.path.append(PATH)
 
-os.environ["FSLDIR"] = "/cluster/apps/fsl/5.0.7/x86_64"
 os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 
 import argparse
@@ -39,6 +38,7 @@ from tqdm import tqdm
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--FSLDIR", required=True)
     parser.add_argument("--data_dir", required=True)
     parser.add_argument("--spatial_type", choices=["coord", "dist"])
     parser.add_argument("--max_log_SH", type=float, default=4.)
@@ -49,9 +49,10 @@ if __name__ == "__main__":
     parser.add_argument("--init_points", type=int, default=5)
     parser.add_argument("--n_iter", type=int, default=30)
     parser.add_argument("--random_state", type=int, default=0)
-
     args_dict = vars(parser.parse_args())
-    # setup
+    
+    # Setup
+    os.environ["FSLDIR"] = args_dict["FSLDIR"]
     task_name = "test_retest_kmeans"
     config_dict = load_config(task_name)
     config_dict["features"]["spatial_type"] = args_dict["spatial_type"]

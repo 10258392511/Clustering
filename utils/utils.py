@@ -154,11 +154,11 @@ def save_prob_maps(save_dir: str, left_prob_maps: Union[np.ndarray, None] = None
             save_image(prob_maps[..., channel_iter], os.path.join(save_dir, f"cluster_{channel_iter}.nii.gz"), affine)
     
     if left_prob_maps is not None:
-        save_thalamus(left_prob_maps, "left", save_dir)
+        save_thalamus(left_prob_maps, "left", save_dir, affine)
     if right_prob_maps is not None:
-        save_thalamus(right_prob_maps, "right", save_dir)
+        save_thalamus(right_prob_maps, "right", save_dir, affine)
     if left_prob_maps is not None and right_prob_maps is not None:
-        save_thalamus(left_prob_maps + right_prob_maps, "whole", save_dir)
+        save_thalamus(left_prob_maps + right_prob_maps, "whole", save_dir, affine)
 
 
 def align_labels(atlas: np.ndarray, standard_atlas: np.ndarray, percentile: float):
