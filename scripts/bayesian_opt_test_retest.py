@@ -38,7 +38,9 @@ if __name__ == "__main__":
     parser.add_argument("--FSLDIR", required=True)
     parser.add_argument("--data_dir", required=True)
     parser.add_argument("--spatial_type", choices=["coord", "dist"])
-    parser.add_argument("--max_log_SH", type=float, default=4.)
+    parser.add_argument("--max_spatial_weight", type=float, default=1.)
+    parser.add_argument("--min_log_SH", type=float, default=-2.)
+    parser.add_argument("--max_log_SH", type=float, default=2.)
     parser.add_argument("--init", default="k-means++", choices=["k-means++", "random", "histology_atlas"])
     parser.add_argument("--n_init", type=int, default=20)
     parser.add_argument("--max_iter", type=int, default=100)
@@ -163,7 +165,7 @@ if __name__ == "__main__":
 
             return out_val
     
-    pbounds = {"log_SH_coeff": (0., args_dict["max_log_SH"]), "spatial_weight": (0., 1.)}
+    pbounds = {"log_SH_coeff": (args_dict["min_log_SH"], args_dict["max_log_SH"]), "spatial_weight": (0., args_dict["max_spatial_weight"])}
     opt = BayesianOptimization(
         f=run_experiment,
         pbounds=pbounds,

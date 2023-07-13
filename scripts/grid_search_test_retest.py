@@ -55,7 +55,8 @@ if __name__ == "__main__":
     parser.add_argument("--spatial_type", choices=["coord", "dist"])
     parser.add_argument("--num_SH_scaler_steps", type=int, default=10)
     parser.add_argument("--num_spatial_weight_steps", type=int, default=10)
-    parser.add_argument("--max_log_SH", type=float, default=4.)
+    parser.add_argument("--min_log_SH", type=float, default=-2.)
+    parser.add_argument("--max_log_SH", type=float, default=2.)
     parser.add_argument("--init", default="k-means++", choices=["k-means++", "random", "histology_atlas"])
     parser.add_argument("--n_init", type=int, default=20)
     parser.add_argument("--max_iter", type=int, default=100)
@@ -89,7 +90,7 @@ if __name__ == "__main__":
         featurizer_ctor = SpatialSphericalFeature
     elif args_dict["spatial_type"] == "dist":
         featurizer_ctor = DistSphericalFeature
-    log_SH_scaler_grid = np.linspace(0., args_dict["max_log_SH"], args_dict["num_SH_scaler_steps"])
+    log_SH_scaler_grid = np.linspace(args_dict["min_log_SH"], args_dict["max_log_SH"], args_dict["num_SH_scaler_steps"])
     spatial_weights_grid = np.linspace(0., 1., args_dict["num_spatial_weight_steps"])
     # end of Setup
     
