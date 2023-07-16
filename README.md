@@ -108,7 +108,7 @@ The third program runs clustering algorithm on each scan (i.e. `run_A/` and/or `
 ```bash
 python3 scripts/clustering.py \
 --FSLDIR $FSLDIR \
---data_dir "./data/test_retest_all/grid_search/" \
+--data_dir "./input_data_dir/" \
 --output_dir "../outputs_clustering/clustering/" \
 --clustering_type "GM" \
 --n_clusters 7 \
@@ -125,3 +125,23 @@ python3 scripts/clustering.py \
 For `clustering_type` we support K-Means (`kmeans`) and Gaussian Mixture (`GM`). Only when using `GM`, `covariance_type` is used. 
 
 For clustering algorithm parameter initialization (`init`),  `kmeans` supports `k-means++`, `random` and `histology_atlas` which is using histology atlas for centroids initialization. `GM` supports `kmeans`, `random` and `histology_atlas`. The last option means using histology atlas for initialization of means of each Gaussian mixture component; the rest parameters are initialized with `kmeans`.
+
+## Post-Processing Commands
+We provide scree plot and silhouette score to evaluate a clustering result. Therefore, you can compare results with different number of clusters. An example commands:
+```bash
+python3 scripts/scree_plot.py \
+--results_dir "../results_dir" \
+--output_dir "../output_dir/scree_plot" \
+--data_dir "./input_data_dir" \
+--spatial_weight 0.9 \
+--SH_scaler 0.0185
+```
+```bash
+python3 scripts/silhouette_score.py \
+--results_dir "../results_dir" \
+--output_dir "../output_dir/silhouette_score" \
+--data_dir "./input_data_dir" \
+--spatial_weight 0.9 \
+--SH_scaler 0.0185
+```
+Note that we keep the arguments for both program the same. You need to specify a `results_dir` which contains multiple directories. These directories are the results of the third program in the previous section (```python3 scripts/clustering.py ...```).  For example, you can set `n_clusters` to be 2, 3, ..., 10 and run ```python3 scripts/clustering.py ...``` to get a output folder for each `n_clusters`. Then you can move all these folders to `results_dir`.
