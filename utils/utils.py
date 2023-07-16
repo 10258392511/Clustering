@@ -84,7 +84,7 @@ def read_data(dirname: str, if_read_tfm=True) -> dict:
                 }
         for key_iter in ["left", "right"]:
             individual_thalamus_dict = {}
-            thalamus_subdir_name = glob.glob(os.path.join(run_iter, "thalamus*"))[0]
+            thalamus_subdir_name = glob.glob(os.path.join(run_iter, "thalamus*/"))[0]
             individual_thalamus_dict["thalamus_mask"] = load_nifti_data_with_validation(os.path.join(run_iter, f"thalamus_mask_{key_iter}.nii.gz"))
             individual_thalamus_dict["thalamus_atlas_mask"] = load_nifti_data_with_validation(os.path.join(thalamus_subdir_name, f"{key_iter}_thalamus_atlasmask.nii.gz"))
             individual_thalamus_dict["nucleigroups"] = load_nifti_data_with_validation(os.path.join(thalamus_subdir_name, f"{key_iter}_thalamus_nucleigroups_nonlinear.nii.gz"))
