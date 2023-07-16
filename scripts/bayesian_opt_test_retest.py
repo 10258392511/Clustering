@@ -159,10 +159,10 @@ if __name__ == "__main__":
     def run_experiment(log_SH_coeff: float, spatial_weight: float):
         dsc_dict = run_experiment_all_dsc(log_SH_coeff, spatial_weight, False)
         if args_dict["criterion"] == "dsc_two_runs":
-            return dsc_dict["dsc_two_runs"]
+            output = dsc_dict["dsc_two_runs"]
+            return output
         else:
             out_val = 0.5 * (dsc_dict["dsc_run_A"] + dsc_dict["dsc_run_B"])
-
             return out_val
     
     pbounds = {"log_SH_coeff": (args_dict["min_log_SH"], args_dict["max_log_SH"]), "spatial_weight": (0., args_dict["max_spatial_weight"])}
@@ -180,4 +180,3 @@ if __name__ == "__main__":
     run_experiment_all_dsc(**opt.max["params"], if_save=True)
     
     log_file.close()
-    

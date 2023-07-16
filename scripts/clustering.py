@@ -133,7 +133,9 @@ if __name__ == "__main__":
                     os.makedirs(save_dir)
                 
                 system_affine_mat = data_dict_all[run_dir]["left"]["thalamus_mask"].affine
-
+                
+                save_image(cluster_dict["left"]["atlas_not_remapped"], os.path.join(save_dir, "left_atlas_not_remapped.nii.gz"), system_affine_mat)
+                save_image(cluster_dict["right"]["atlas_not_remapped"], os.path.join(save_dir, "right_atlas_not_remapped.nii.gz"), system_affine_mat)
                 save_image(cluster_dict["left"]["atlas_not_remapped"] + cluster_dict["right"]["atlas_not_remapped"], os.path.join(save_dir, "atlas_not_remapped.nii.gz"), system_affine_mat)
                 
                 if num_classes == 7:
@@ -141,7 +143,7 @@ if __name__ == "__main__":
                     save_image(cluster_dict["left"]["atlas"] + cluster_dict["right"]["atlas"], os.path.join(save_dir, "atlas_remapped_to_histology.nii.gz"), system_affine_mat)
 
                 save_prob_maps(save_dir, cluster_dict["left"]["prob_maps"], cluster_dict["right"]["prob_maps"], system_affine_mat)
-                
+                    
         except Exception as e:
             print(f"{data_dir}", file=log_file)
             print(e, file=log_file)

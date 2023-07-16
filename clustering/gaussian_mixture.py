@@ -27,7 +27,10 @@ class GaussianMixtureCluster(BaseCluster):
         feature_probs = model.predict_proba(thalamus_feature_dict["features"])  # (N_all, num_clusters)
 
         for label in range(num_clusters):
-            tgt_channel = atlas2standard[label + 1]
+            if num_clusters != 7:
+                tgt_channel = label
+            else:
+                tgt_channel = atlas2standard[label + 1]
             prob_maps[coords[:, 0], coords[:, 1], coords[:, 2], tgt_channel] += feature_probs[:, label]
         
         assert np.all(prob_maps <= 1 + 1e-4)
