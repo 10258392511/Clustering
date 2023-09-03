@@ -110,7 +110,7 @@ if __name__ == "__main__":
             config_dict["features"]["spherical_scale"] = SH_coeff
             config_dict["features"]["spatial_weight"] = spatial_weight
 
-            data_dict_all = read_data(data_dir)
+            data_dict_all = read_data(data_dir, if_read_tfm=False)
             for run_dir in data_dict_all:
                 data_dict = data_dict_all[run_dir]
                 
